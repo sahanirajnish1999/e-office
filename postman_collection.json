@@ -1,0 +1,805 @@
+{
+  "info": {
+    "_postman_id": "b3e9b1d0-1234-4567-89ab-cdef01234567",
+    "name": "Enterprise Express API Collection",
+    "description": "Postman collection covering Super Admin, Department Admins, Employees, Email Change Workflow with Approval, Password Reset, and Complete Document Management with Simplified Pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "departmentId", "value": "", "type": "string" },
+    { "key": "targetDeptId", "value": "", "type": "string" },
+    { "key": "requestId", "value": "", "type": "string" },
+    { "key": "resetToken", "value": "", "type": "string" },
+    { "key": "documentId", "value": "", "type": "string" },
+    { "key": "employeeUserId", "value": "", "type": "string" },
+    { "key": "replicaId", "value": "", "type": "string" },
+    { "key": "notingId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
+      },
+      "response": []
+    },
+    {
+      "name": "1. Authentication & Password Recovery",
+      "item": [
+        {
+          "name": "Register Super Admin (First User Only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data.token) {",
+                  "        pm.collectionVariables.set(\"token\", res.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Administrator\",\n  \"email\": \"superadmin@example.com\",\n  \"password\": \"SuperSecret123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data.token) {",
+                  "        pm.collectionVariables.set(\"token\", res.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@example.com\",\n  \"password\": \"SuperSecret123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password (Request Reset Email)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@example.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot-password"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password with Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"BrandNewPassword123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password/{{resetToken}}", "host": ["{{baseUrl}}"], "path": ["api", "auth", "reset-password", "{{resetToken}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Departments (Super Admin)",
+      "item": [
+        {
+          "name": "Create Primary Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"departmentId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Software development and IT operations\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/departments", "host": ["{{baseUrl}}"], "path": ["api", "departments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Second Department (For Forwarding)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"targetDeptId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Human Resources\",\n  \"code\": \"HR\",\n  \"description\": \"People operations and talent\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/departments", "host": ["{{baseUrl}}"], "path": ["api", "departments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Departments (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/departments?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department By ID",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/departments/{{departmentId}}", "host": ["{{baseUrl}}"], "path": ["api", "departments", "{{departmentId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Department Admins (Super Admin)",
+      "item": [
+        {
+          "name": "Create Department Admin",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Dept Admin\",\n  \"email\": \"alice.admin@example.com\",\n  \"password\": \"AdminSecret123!\",\n  \"departmentId\": \"{{departmentId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/department-admins", "host": ["{{baseUrl}}"], "path": ["api", "users", "department-admins"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/profile", "host": ["{{baseUrl}}"], "path": ["api", "users", "profile"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Users (Paginated, Super Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Employees (Dept Admin)",
+      "item": [
+        {
+          "name": "Create Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"employeeUserId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Developer\",\n  \"email\": \"bob.dev@example.com\",\n  \"password\": \"BobSecret123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/employees", "host": ["{{baseUrl}}"], "path": ["api", "employees"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Department Employees (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "departmentId", "value": "{{departmentId}}", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Email Change Workflow",
+      "item": [
+        {
+          "name": "Submit Email Change Request (User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"requestId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestedEmail\": \"alice.new@example.com\",\n  \"reason\": \"Company domain transition\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/email-requests", "host": ["{{baseUrl}}"], "path": ["api", "email-requests"] }
+          },
+          "response": []
+        },
+        {
+          "name": "View My Email Requests (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/email-requests/my?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "email-requests", "my"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Pending Requests (Paginated, Super Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/email-requests?page=1&pageSize=10&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "email-requests"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "status", "value": "pending" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Email Change Request (Super Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reviewNotes\": \"Approved after HR verification\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/email-requests/{{requestId}}/review", "host": ["{{baseUrl}}"], "path": ["api", "email-requests", "{{requestId}}", "review"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Documents & Collaboration",
+      "item": [
+        {
+          "name": "1. Upload & Create Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"documentId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "title", "value": "Project Roadmap & Strategy 2026", "type": "text" },
+                { "key": "fileDate", "value": "2026-11-05", "type": "text" },
+                { "key": "subject", "value": "Quarterly Technical Architecture Roadmap", "type": "text" },
+                { "key": "shelf", "value": "Rack-Engineering-A1", "type": "text" },
+                { "key": "departmentId", "value": "{{departmentId}}", "type": "text" },
+                { "key": "targetAudience", "value": "specific_employees", "type": "text" },
+                { "key": "highlights", "value": "[\"Deliver MVP in Q1\", \"Deploy Microservices in Q2\", \"Automate CI/CD Pipeline\"]", "type": "text" },
+                { "key": "allowedUsers", "value": "[{\"userId\": \"{{employeeUserId}}\", \"permissions\": {\"canView\": true, \"canRemark\": true, \"canSuggestChange\": true, \"canDownload\": true}}]", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents", "host": ["{{baseUrl}}"], "path": ["api", "documents"] }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Search & List Documents (Paginated & Multi-Filter)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?page=1&pageSize=10&subject=Architecture&sortAlphabetical=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "subject", "value": "Architecture" },
+                { "key": "shelf", "value": "Rack", "disabled": true },
+                { "key": "departmentId", "value": "{{departmentId}}", "disabled": true },
+                { "key": "sortAlphabetical", "value": "asc" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Document Details",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Update Document Permissions",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetAudience\": \"specific_employees\",\n  \"allowedUsers\": [\n    {\n      \"userId\": \"{{employeeUserId}}\",\n      \"permissions\": {\n        \"canView\": true,\n        \"canRemark\": true,\n        \"canSuggestChange\": true,\n        \"canDownload\": true\n      }\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/permissions", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "permissions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "4a. List Document Permissions (Paginated, Pattern B)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/permissions?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "permissions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            },
+            "description": "Paginated list of users granted permission to this document. Handles 500 - 2,000+ users cleanly."
+          },
+          "response": []
+        },
+        {
+          "name": "4b. Bulk Grant Document Permissions (Pattern B)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allowedUsers\": [\n    {\n      \"userId\": \"{{employeeUserId}}\",\n      \"permissions\": {\n        \"canView\": true,\n        \"canRemark\": true,\n        \"canSuggestChange\": true,\n        \"canDownload\": true\n      }\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/permissions/grant", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "permissions", "grant"] }
+          },
+          "response": []
+        },
+        {
+          "name": "4c. Revoke User Document Permission (Pattern B)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/permissions/{{employeeUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "permissions", "{{employeeUserId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Forward Document to Another Department",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetDepartmentId\": \"{{targetDeptId}}\",\n  \"targetAudience\": \"all_employees\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/forward", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "forward"] }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Update Forwarded Department Permissions (Recipient Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetAudience\": \"all_employees\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/forwarded-permissions/{{targetDeptId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "forwarded-permissions", "{{targetDeptId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Add Remark from Accessor",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Reviewed the file; the timeline in Section 3 looks achievable.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/remarks", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "remarks"] }
+          },
+          "response": []
+        },
+        {
+          "name": "8. Add Virtual Sticky Note (Colorful)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"pink\",\n  \"note\": \"URGENT: Verify compliance with the legal team before final submission!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/stickies", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "stickies"] }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Add Official Document Noting",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data.length > 0) {",
+                  "        pm.collectionVariables.set(\"notingId\", res.data[res.data.length - 1]._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Note 1: Proposed budget allocation of $50,000 for Q2 infrastructure expansion.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/notings", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "notings"] }
+          },
+          "response": []
+        },
+        {
+          "name": "10. Approve Official Document Noting (Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/notings/{{notingId}}/approve", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "notings", "{{notingId}}", "approve"] }
+          },
+          "response": []
+        },
+        {
+          "name": "11. Create Replica / Suggest Changes (Employee)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.data && res.data._id) {",
+                  "        pm.collectionVariables.set(\"replicaId\", res.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Suggested Roadmap Adjustments (DevOps)", "type": "text" },
+                { "key": "proposedChanges", "value": "Split database migration into Phase 2A and 2B to minimize downtime.", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/replicas", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "replicas"] }
+          },
+          "response": []
+        },
+        {
+          "name": "12. List Document Replicas (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/replicas?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "replicas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. Review Replica Suggestion (Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reviewNotes\": \"Great suggestion. Approved for integration.\",\n  \"applyChangesToOriginal\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/documents/replicas/{{replicaId}}/review", "host": ["{{baseUrl}}"], "path": ["api", "documents", "replicas", "{{replicaId}}", "review"] }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Withdraw File (Creator / Super Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/withdraw", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "withdraw"] }
+          },
+          "response": []
+        },
+        {
+          "name": "15. Employee Self-Delete (Remove Access from My View)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/my-access", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "my-access"] }
+          },
+          "response": []
+        },
+        {
+          "name": "16. Department Delete (Dept Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/department", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "department"] }
+          },
+          "response": []
+        },
+        {
+          "name": "17. Permanent Delete (Super Admin Strictly)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/permanent", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "permanent"] }
+          },
+          "response": []
+        },
+        {
+          "name": "18. Get Document Activity Audit Logs (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/logs?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. General Files & Mail",
+      "item": [
+        {
+          "name": "Upload General File",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": { "raw": "{{baseUrl}}/api/files/upload", "host": ["{{baseUrl}}"], "path": ["api", "files", "upload"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List General Files (Paginated)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Direct Email",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Direct Email Notification\",\n  \"text\": \"Hello from Express API\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/mail/send", "host": ["{{baseUrl}}"], "path": ["api", "mail", "send"] }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
